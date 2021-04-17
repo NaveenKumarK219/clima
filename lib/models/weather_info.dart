@@ -1,7 +1,8 @@
 class WeatherInfo {
   final int minTemp;
   final int maxTemp;
-  final DateTime dateTime;
+  final String icon;
+  final String day;
 
-  WeatherInfo({this.minTemp, this.maxTemp, this.dateTime});
+  WeatherInfo({this.minTemp, this.maxTemp, this.day, this.icon});
 }

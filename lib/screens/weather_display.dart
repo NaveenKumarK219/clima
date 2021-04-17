@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:ui';
 
-import 'package:clima/components/clima_chart.dart';
+import 'package:clima/components/clima_container.dart';
 import 'package:clima/components/clima_fit_text.dart';
+import 'package:clima/components/clima_weather_daily.dart';
 import 'package:clima/constants/ApiConstants.dart';
 import 'package:clima/constants/style_contants.dart';
 import 'package:clima/models/weather_info.dart';
@@ -11,8 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:clima/components/clima_container.dart';
-import 'package:charts_flutter/flutter.dart' as charts;
 
 class WeatherDisplay extends StatefulWidget {
   @override
@@ -41,11 +40,13 @@ class _WeatherDisplayState extends State<WeatherDisplay> {
   dynamic snow;
   List<WeatherInfo> weatherInfoList;
   String message;
+  List<ClimaWeatherDaily> dailyWeatherList;
 
   @override
   void initState() {
     super.initState();
     weatherInfoList = [];
+    dailyWeatherList = [];
     getWeatherData();
   }
 
@@ -115,16 +116,25 @@ class _WeatherDisplayState extends State<WeatherDisplay> {
         int timezoneOffset = weatherData['timezone_offset'];
         weatherInfoList = [];
 
+        DateFormat dateFormat = DateFormat('EEE');
+        DateTime dt;
         dailyList.forEach((element) {
-          DateTime dt = DateTime.fromMillisecondsSinceEpoch(
+          dt = DateTime.fromMillisecondsSinceEpoch(
               (element['dt'] + timezoneOffset) * 1000,
               isUtc: true);
           weatherInfoList.add(WeatherInfo(
-            minTemp: element['temp']['min'].toInt(),
-            maxTemp: element['temp']['max'].toInt(),
-            dateTime: dt,
-          ));
+              minTemp: element['temp']['min'].toInt(),
+              maxTemp: element['temp']['max'].toInt(),
+              day: dateFormat.format(dt),
+              icon: element['weather'][0]['icon']));
         });
+
+        dailyWeatherList = List.generate(
+          weatherInfoList.length,
+          (index) => ClimaWeatherDaily(
+            weatherInfo: weatherInfoList[index],
+          ),
+        );
       });
     }
     print(weatherInfoList.length);
@@ -169,7 +179,7 @@ class _WeatherDisplayState extends State<WeatherDisplay> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Expanded(
+          Flexible(
             flex: 1,
             child: ClimaContainer(
               child: message != null
@@ -311,27 +321,11 @@ class _WeatherDisplayState extends State<WeatherDisplay> {
                     ),
             ),
           ),
-          Expanded(
+          Flexible(
             flex: 1,
-            child: ClimaContainer(
-              child: ClimaChart(
-                weatherDataList: [
-                  charts.Series<WeatherInfo, DateTime>(
-                    id: 'MaxTemp',
-                    data: weatherInfoList,
-                    domainFn: (WeatherInfo info, _) => info.dateTime,
-                    measureFn: (WeatherInfo info, _) => info.maxTemp,
-                    colorFn: (_, __) => charts.MaterialPalette.white,
-                  ),
-                  charts.Series<WeatherInfo, DateTime>(
-                    id: 'MinTemp',
-                    data: weatherInfoList,
-                    domainFn: (WeatherInfo info, _) => info.dateTime,
-                    measureFn: (WeatherInfo info, _) => info.minTemp,
-                    colorFn: (_, __) => charts.MaterialPalette.white,
-                  ),
-                ],
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: dailyWeatherList,
             ),
           ),
           Flexible(
